@@ -18,8 +18,6 @@ function App() {
   const [password, setPassword] = useState('');
   const [token, setToken] = useState('');
   const [playbackSpeed, setPlaybackSpeed] = useState(2); // State for playback speed
-  const [newPlaylistUrl, setNewPlaylistUrl] = useState(''); // State for the new playlist URL
-
 
   useEffect(() => {
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
@@ -47,44 +45,6 @@ function App() {
       .then(response => setSubjects(response.data))
       .catch(error => console.error(error));
   };
-
-
-  const addLecturesToSubject = () => {
-    if (!selectedSubject || !newPlaylistUrl) {
-      alert('Please select a subject and enter a valid YouTube playlist URL.');
-      return;
-    }
-
-    axios.post(`https://study-manager-production.up.railway.app/api/subjects/${selectedSubject}/add-lectures`, 
-      { playlistUrl: newPlaylistUrl }, 
-      { headers: { 'Authorization': token } }
-    )
-      .then(response => {
-        alert('Lectures added successfully');
-        setNewPlaylistUrl(''); // Clear the input field after success
-        fetchChapters(selectedSubject, token); // Refresh the chapters list
-      })
-      .catch(error => console.error('Error adding lectures:', error));
-  };
-  useEffect(() => {
-    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-    setIsDarkMode(savedDarkMode);
-  }, []);
-
-  useEffect(() => {
-    document.body.classList.toggle('dark-mode', isDarkMode);
-    localStorage.setItem('darkMode', isDarkMode);
-  }, [isDarkMode]);
-
-  useEffect(() => {
-    const savedToken = localStorage.getItem('token');
-    if (savedToken) {
-      setToken(savedToken);
-      setIsLoggedIn(true);
-      fetchSubjects(savedToken);
-    }
-  }, []);
-
 
   const fetchChapterDuration = (chapterId, authToken) => {
     return axios.get(`https://study-manager-production.up.railway.app/api/chapters/${chapterId}/duration`, {
@@ -302,23 +262,7 @@ function App() {
                 ))}
               </ul>
             </>
-          )} 
-          {selectedSubject && (
-            <div className="add-lectures-container">
-              <h2>Add Lectures to Subject</h2>
-              <input
-                type="text"
-                placeholder="Enter YouTube Playlist URL"
-                value={newPlaylistUrl}
-                onChange={(e) => setNewPlaylistUrl(e.target.value)}
-                className="input-field"
-              />
-              <button onClick={addLecturesToSubject} className="add-button">
-                Add Lectures
-              </button>
-            </div>
           )}
-
           {selectedChapter && (
             <div className="content-container">
               {selectedLecture && (
