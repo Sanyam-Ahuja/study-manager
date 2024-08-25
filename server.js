@@ -27,6 +27,7 @@ app.use(bodyParser.json());
 
 const db = new sqlite3.Database('study-manager.db');
 
+// Create tables if they don't exist
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS Users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -61,10 +62,7 @@ db.serialize(() => {
   )`);
 });
 
-app.get('/', (req, res) => {
-  res.send('Hello World!');
-});
-
+// Register new user and populate their lectures
 app.post('/api/register', (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
@@ -82,12 +80,37 @@ app.post('/api/register', (req, res) => {
       }
 
       const userId = this.lastID;
-      scanAndPopulateUserLectures(userId);
+      populateUserLecturesFromExistingData(userId);
       res.json({ id: userId, username });
     });
   });
 });
 
+// Populate lectures for a new user based on existing subjects and chapters
+function populateUserLecturesFromExistingData(userId) {
+  db.all(`SELECT * FROM Chapters`, [], (err, chapters) => {
+    if (err) {
+      console.error('Error fetching chapters:', err);
+      return;
+    }
+
+    chapters.forEach(chapter => {
+      db.all(`SELECT * FROM Lectures WHERE chapter_id = ?`, [chapter.id], (err, lectures) => {
+        if (err) {
+          console.error('Error fetching lectures:', err);
+          return;
+        }
+
+        lectures.forEach(lecture => {
+          db.run(`INSERT INTO Lectures (chapter_id, user_id, name, file_path, watched, duration) VALUES (?, ?, ?, ?, ?, ?)`,
+            [chapter.id, userId, lecture.name, lecture.file_path, false, lecture.duration]);
+        });
+      });
+    });
+  });
+}
+
+// Login existing user
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
   db.get(`SELECT * FROM Users WHERE username = ?`, [username], (err, user) => {
@@ -106,6 +129,7 @@ app.post('/api/login', (req, res) => {
   });
 });
 
+// Authenticate token middleware
 function authenticateToken(req, res, next) {
   const token = req.headers['authorization'];
   if (!token) return res.status(401).json({ error: 'Access denied' });
@@ -117,6 +141,7 @@ function authenticateToken(req, res, next) {
   });
 }
 
+// Fetch subjects
 app.get('/api/subjects', authenticateToken, (req, res) => {
   db.all(`SELECT * FROM Subjects`, [], (err, subjects) => {
     if (err) {
@@ -126,6 +151,7 @@ app.get('/api/subjects', authenticateToken, (req, res) => {
   });
 });
 
+// Fetch chapters by subject
 app.get('/api/subjects/:subjectId/chapters', authenticateToken, (req, res) => {
   const { subjectId } = req.params;
   db.all(`SELECT * FROM Chapters WHERE subject_id = ?`, [subjectId], (err, chapters) => {
@@ -136,6 +162,7 @@ app.get('/api/subjects/:subjectId/chapters', authenticateToken, (req, res) => {
   });
 });
 
+// Fetch lectures by chapter
 app.get('/api/chapters/:chapterId/lectures', authenticateToken, (req, res) => {
   const { chapterId } = req.params;
   db.all(`SELECT Lectures.*, Subjects.name AS subject_name, Chapters.name AS chapter_name
@@ -166,7 +193,7 @@ app.get('/api/chapters/:chapterId/lectures', authenticateToken, (req, res) => {
   });
 });
 
-
+// Toggle watched status of a lecture
 app.put('/api/lectures/:lectureId/toggle-watched', authenticateToken, (req, res) => {
   const { lectureId } = req.params;
   db.get(`SELECT watched FROM Lectures WHERE id = ? AND user_id = ?`, [lectureId, req.user.id], (err, lecture) => {
@@ -184,6 +211,7 @@ app.put('/api/lectures/:lectureId/toggle-watched', authenticateToken, (req, res)
   });
 });
 
+// Get total duration of watched and all lectures in a chapter
 app.get('/api/chapters/:chapterId/duration', authenticateToken, (req, res) => {
   const { chapterId } = req.params;
   db.get(`SELECT
@@ -198,6 +226,7 @@ app.get('/api/chapters/:chapterId/duration', authenticateToken, (req, res) => {
   });
 });
 
+// Get total duration of watched and all lectures in a subject
 app.get('/api/subjects/:subjectId/duration', authenticateToken, (req, res) => {
   const { subjectId } = req.params;
   db.get(`SELECT
@@ -213,92 +242,8 @@ app.get('/api/subjects/:subjectId/duration', authenticateToken, (req, res) => {
   });
 });
 
+// Serve static files
 app.use('/lectures', express.static(path.join(__dirname, 'lectures')));
-
-function scanAndPopulateUserLectures(userId) {
-  const LECTURES_DIR = './lectures';
-  fs.readdir(LECTURES_DIR, (err, subjects) => {
-    if (err) {
-      console.error('Error reading subjects directory:', err);
-      return;
-    }
-
-    subjects.forEach(subject => {
-      const subjectPath = path.join(LECTURES_DIR, subject);
-      if (fs.lstatSync(subjectPath).isDirectory()) {
-        db.get(`SELECT id FROM Subjects WHERE name = ?`, [subject], (err, row) => {
-          if (!row) {
-            db.run(`INSERT INTO Subjects (name) VALUES (?)`, [subject], function(err) {
-              if (err) return console.error(err.message);
-              processChapters(subjectPath, this.lastID, userId);
-            });
-          } else {
-            processChapters(subjectPath, row.id, userId);
-          }
-        });
-      }
-    });
-  });
-}
-
-function processLectures(chapterPath, chapterId, userId) {
-  fs.readdir(chapterPath, (err, lectures) => {
-    if (err) {
-      console.error('Error reading lectures directory:', err);
-      return;
-    }
-
-    lectures.sort();
-
-    lectures.forEach(lecture => {
-      const lecturePath = path.join(chapterPath, lecture);
-      if (fs.lstatSync(lecturePath).isFile() && path.extname(lecture) === '.mp4') {
-        const lectureDuration = getLectureDuration(lecturePath);
-        db.get(`SELECT id FROM Lectures WHERE chapter_id = ? AND user_id = ? AND name = ?`, [chapterId, userId, lecture], (err, row) => {
-          if (!row) {
-            db.run(`INSERT INTO Lectures (chapter_id, user_id, name, file_path, watched, duration) VALUES (?, ?, ?, ?, ?, ?)`,
-              [chapterId, userId, lecture, lecturePath, false, lectureDuration]);
-          }
-        });
-      }
-    });
-  });
-}
-
-function processChapters(subjectPath, subjectId, userId) {
-  fs.readdir(subjectPath, (err, chapters) => {
-    if (err) {
-      console.error('Error reading chapters directory:', err);
-      return;
-    }
-
-    chapters.forEach(chapter => {
-      const chapterPath = path.join(subjectPath, chapter);
-      if (fs.lstatSync(chapterPath).isDirectory()) {
-        db.get(`SELECT id FROM Chapters WHERE subject_id = ? AND name = ?`, [subjectId, chapter], (err, row) => {
-          if (!row) {
-            db.run(`INSERT INTO Chapters (subject_id, name) VALUES (?, ?)`, [subjectId, chapter], function(err) {
-              if (err) return console.error(err.message);
-              processLectures(chapterPath, this.lastID, userId);
-            });
-          } else {
-            processLectures(chapterPath, row.id, userId);
-          }
-        });
-      }
-    });
-  });
-}
-
-function getLectureDuration(filePath) {
-  try {
-    const duration = execSync(`ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "${filePath}"`, { encoding: 'utf8' });
-    return Math.round(parseFloat(duration.trim()));
-  } catch (error) {
-    console.error('Error getting lecture duration:', error);
-    return 0;
-  }
-}
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
