@@ -1,0 +1,1490 @@
+.App {
+  text-align: center;
+}
+.completed{
+  color: red; /* Change the color to gray for watched lectures */
+  text-decoration: line-through
+  /* You can add additional styles here to visually indicate a watched lecture */
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* App.css */
+
+/* Container styles */
+.app-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Title styles */
+.title {
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+/* Subjects container styles */
+.subjects-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Subject button styles */
+.subject-button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.subject-button:hover {
+  background-color: #0056b3;
+}
+
+/* Chapters list styles */
+.chapters-list {
+  list-style: none;
+  padding: 0;
+}
+
+/* Chapter item styles */
+.chapter-item {
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 5px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.chapter-item:hover {
+  background-color: #e0e0e0;
+}
+
+/* Lectures list styles */
+.lectures-list {
+  list-style: none;
+  padding: 0;
+}
+
+/* Lecture item styles */
+.lecture-item {
+  background-color: #f9f9f9;
+  padding: 10px;
+  margin-bottom: 5px;
+  border-radius: 5px;
+}
+
+/* Watched button styles */
+.watched-button {
+  background-color: #28a745;
+  color: #fff;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background-color 0.3s;
+}
+
+.watched-button:hover {
+  background-color: #218838;
+}
+
+/* Progress container styles */
+.progress-container {
+  margin-top: 20px;
+}
+
+/* Section title styles */
+.section-title {
+  font-size: 20px;
+  margin-top: 20px;
+}
+
+/* Progress bar styles */
+.progress-bar {
+  background-color: #ddd;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+/* Progress bar item styles */
+.progress-bar div {
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  color: #fff;
+  font-weight: bold;
+}
+
+/* Watched progress styles */
+.watched-progress {
+  background-color: #007bff;
+}
+
+/* Remaining progress styles */
+.remaining-progress {
+  background-color: #28a745;
+}
+.watched {
+  color: red; /* Change the color to gray for watched lectures */
+  text-decoration: line-through
+  /* You can add additional styles here to visually indicate a watched lecture */
+}
+.completed{
+  color: red; /* Change the color to gray for watched lectures */
+  text-decoration: line-through
+  /* You can add additional styles here to visually indicate a watched lecture */
+}
+/* App.css */
+
+/* General Layout */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f9;
+  margin: 0;
+  padding: 0;
+}
+
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Header */
+.title {
+  text-align: center;
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 2.5em;
+}
+
+/* Subjects */
+.subjects-container {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.subject-item {
+  margin: 10px;
+}
+
+.subject-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.1em;
+  transition: background-color 0.3s;
+}
+
+.subject-button:hover {
+  background-color: #0056b3;
+}
+
+/* Chapters */
+.section-title {
+  text-align: center;
+  color: #333;
+  margin-bottom: 10px;
+  font-size: 2em;
+}
+
+.chapters-list, .lectures-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.chapter-item {
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  margin: 10px 0;
+  padding: 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.chapter-item.completed {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+}
+
+.chapter-item:hover {
+  background-color: #f1f1f1;
+}
+
+/* Lectures */
+.lecture-item {
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.lecture-item.watched {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+}
+
+.watched-button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.3s;
+}
+
+.watched-button:hover {
+  background-color: #218838;
+}
+
+/* Progress */
+.progress-container {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.progress-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.watched-progress, .remaining-progress {
+  background-color: #007bff;
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  margin: 0 10px;
+}
+
+.remaining-progress {
+  background-color: #6c757d;
+}
+
+/* Video Player */
+.video-player-containerr {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.video-player h2 {
+  margin-bottom: 20px;
+  font-size: 1.5em;
+}
+
+.video-player-container {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+}
+.completed{
+  color: red; /* Change the color to gray for watched lectures */
+  text-decoration: line-through
+  /* You can add additional styles here to visually indicate a watched lecture */
+}
+
+.app-container {
+  padding: 20px;
+}
+
+.title {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.subjects-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.subject-item {
+  margin: 10px;
+}
+
+.subject-button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.section-title {
+  margin-top: 20px;
+}
+
+.chapters-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.chapter-item {
+  padding: 10px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+  border-radius: 5px;
+}
+
+.chapter-item.completed {
+  background-color: #e0ffe0;
+}
+
+.content-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.lectures-container {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 80vh;
+  padding-right: 20px;
+}
+
+.lectures-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.lecture-item {
+  padding: 10px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+  border-radius: 5px;
+}
+
+.lecture-item.watched {
+  background-color: #e0ffe0;
+}
+
+.watched-button {
+  margin-left: 10px;
+}
+
+.progress-container {
+  margin-top: 20px;
+}
+
+.progress-bar {
+  display: flex;
+  justify-content: space-between;
+}
+
+.watched-progress,
+.remaining-progress {
+  flex: 1;
+  padding: 10px;
+}
+
+.video-player-container {
+  flex: 2;
+  padding-right: 20px;
+  vertical-align: top;
+}
+
+@media (max-width: 768px) {
+  .content-container {
+    flex-direction: column;
+  }
+
+  .video-player-container {
+    padding-right: 0;
+    margin-bottom: 20px;
+  }
+}
+/* General Layout */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Header */
+.title {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 2.5em;
+}
+
+/* Subjects */
+.subjects-container {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.subject-item {
+  margin: 10px;
+}
+
+.subject-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.1em;
+  transition: background-color 0.3s;
+}
+
+.subject-button:hover {
+  background-color: #0056b3;
+}
+
+/* Chapters */
+.section-title {
+  text-align: center;
+  color: #333;
+  margin-bottom: 10px;
+  font-size: 2em;
+}
+
+.chapters-list, .lectures-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.chapter-item {
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  margin: 10px 0;
+  padding: 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.chapter-item.completed {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+}
+
+.chapter-item:hover {
+  background-color: #f1f1f1;
+}
+
+/* Lectures */
+.lecture-item {
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.lecture-item.watched {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+}
+
+.watched-button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.3s;
+}
+
+.watched-button:hover {
+  background-color: #218838;
+}
+
+/* Progress */
+.progress-container {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.progress-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.watched-progress, .remaining-progress {
+  background-color: #007bff;
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  margin: 0 10px;
+}
+
+.remaining-progress {
+  background-color: #6c757d;
+}
+
+/* Video Player */
+.video-player {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.video-player h2 {
+  margin-bottom: 20px;
+  font-size: 1.5em;
+}
+
+.video-player-container {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+}
+
+/* Dark Mode */
+body.dark-mode {
+  background-color: #121212;
+  color: #ffffff;
+}
+
+body.dark-mode .title {
+  color: #ffffff;
+}
+
+body.dark-mode .subject-button {
+  background-color: #1e88e5;
+  color: white;
+}
+
+body.dark-mode .subject-button:hover {
+  background-color: #1565c0;
+}
+
+body.dark-mode .chapter-item {
+  background-color: #333;
+  border-color: #555;
+}
+
+body.dark-mode .chapter-item:hover {
+  background-color: #444;
+}
+
+body.dark-mode .lecture-item {
+  background-color: #333;
+  border-color: #555;
+}
+
+body.dark-mode .lecture-item.watched {
+  background-color: #4caf50;
+}
+
+body.dark-mode .watched-button {
+  background-color: #4caf50;
+}
+
+body.dark-mode .watched-button:hover {
+  background-color: #388e3c;
+}
+
+body.dark-mode .watched-progress, .dark-mode .remaining-progress {
+  background-color: #1e88e5;
+}
+
+body.dark-mode .remaining-progress {
+  background-color: #757575;
+}
+
+/* Dark Mode Toggle */
+.dark-mode-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.dark-mode-toggle:hover {
+  background-color: #0056b3;
+}
+/* General Layout */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Header */
+.title {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 2.5em;
+}
+
+/* Subjects */
+.subjects-container {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.subject-item {
+  margin: 10px;
+}
+
+.subject-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.1em;
+  transition: background-color 0.3s;
+}
+
+.subject-button:hover {
+  background-color: #0056b3;
+}
+
+/* Chapters */
+.section-title {
+  text-align: center;
+  color: #333;
+  margin-bottom: 10px;
+  font-size: 2em;
+}
+
+.chapters-list, .lectures-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.chapter-item {
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  margin: 10px 0;
+  padding: 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.chapter-item.completed {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+}
+
+.chapter-item:hover {
+  background-color: #f1f1f1;
+}
+
+/* Lectures */
+.lecture-item {
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.lecture-item.watched {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+}
+
+.watched-button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.3s;
+}
+
+.watched-button:hover {
+  background-color: #218838;
+}
+
+/* Progress */
+.progress-container {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.progress-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.watched-progress, .remaining-progress {
+  background-color: #007bff;
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  margin: 0 10px;
+  transition: background-color 0.3s;
+}
+
+.remaining-progress {
+  background-color: #6c757d;
+}
+
+/* Video Player */
+.video-player {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.video-player h2 {
+  margin-bottom: 20px;
+  font-size: 1.5em;
+}
+
+.video-player-container {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+}
+
+/* Dark Mode */
+body.dark-mode {
+  background-color: #121212;
+  color: #ffffff;
+}
+
+body.dark-mode .title {
+  color: #ffffff;
+}
+
+body.dark-mode .subject-button {
+  background-color: #1e88e5;
+  color: white;
+}
+
+body.dark-mode .subject-button:hover {
+  background-color: #1565c0;
+}
+
+body.dark-mode .chapter-item {
+  background-color: #333;
+  border-color: #555;
+}
+
+body.dark-mode .chapter-item:hover {
+  background-color: #444;
+}
+
+body.dark-mode .lecture-item {
+  background-color: #333;
+  border-color: #555;
+}
+
+body.dark-mode .lecture-item.watched {
+  background-color: #4caf50;
+}
+
+body.dark-mode .watched-button {
+  background-color: #4caf50;
+}
+
+body.dark-mode .watched-button:hover {
+  background-color: #388e3c;
+}
+
+body.dark-mode .watched-progress, .dark-mode .remaining-progress {
+  background-color: #1e88e5;
+}
+
+body.dark-mode .remaining-progress {
+  background-color: #757575;
+}
+
+/* Dark Mode Toggle */
+.dark-mode-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.dark-mode-toggle:hover {
+  background-color: #0056b3;
+}
+/* General Layout */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Header */
+.title {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 2.5em;
+}
+
+/* Subjects */
+.subjects-container {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.subject-item {
+  margin: 10px;
+}
+
+.subject-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.1em;
+  transition: background-color 0.3s;
+}
+
+.subject-button:hover {
+  background-color: #0056b3;
+}
+
+/* Chapters */
+.section-title {
+  text-align: center;
+  color: #333;
+  margin-bottom: 10px;
+  font-size: 2em;
+}
+
+.chapters-list, .lectures-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.chapter-item {
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  margin: 10px 0;
+  padding: 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.chapter-item.completed {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+}
+
+.chapter-item:hover {
+  background-color: #f1f1f1;
+}
+
+/* Lectures */
+.lecture-item {
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.lecture-item.watched {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+}
+
+.watched-button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.3s;
+}
+
+.watched-button:hover {
+  background-color: #218838;
+}
+
+/* Progress */
+.progress-container {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.progress-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+  background-color: #f1f1f1;
+}
+
+.watched-progress, .remaining-progress {
+  background-color: #007bff;
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  margin: 0 10px;
+  transition: background-color 0.3s;
+}
+
+.remaining-progress {
+  background-color: #6c757d;
+}
+
+/* Video Player */
+.video-player {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.video-player h2 {
+  margin-bottom: 20px;
+  font-size: 1.5em;
+}
+
+.video-player-container {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+}
+
+/* Dark Mode */
+body.dark-mode {
+  background-color: #121212;
+  color: #ffffff;
+}
+
+body.dark-mode .title {
+  color: #ffffff;
+}
+
+body.dark-mode .subject-button {
+  background-color: #1e88e5;
+  color: white;
+}
+
+body.dark-mode .subject-button:hover {
+  background-color: #1565c0;
+}
+
+body.dark-mode .chapter-item {
+  background-color: #333;
+  border-color: #555;
+}
+
+body.dark-mode .chapter-item:hover {
+  background-color: #444;
+}
+
+body.dark-mode .lecture-item {
+  background-color: #333;
+  border-color: #555;
+}
+
+body.dark-mode .lecture-item.watched {
+  background-color: #4caf50;
+}
+
+body.dark-mode .watched-button {
+  background-color: #4caf50;
+}
+
+body.dark-mode .watched-button:hover {
+  background-color: #388e3c;
+}
+body.dark-mode .progress-bar{
+  background-color: #121212;
+}
+body.dark-mode .watched-progress, .dark-mode .remaining-progress {
+  background-color: #1e88e5;
+}
+body.dark-mode h2.section-title{
+  color: #ffffff;
+}
+body.dark-mode .remaining-progress {
+  background-color: #757575;
+}
+
+/* Dark Mode Toggle */
+.dark-mode-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.dark-mode-toggle:hover {
+  background-color: #0056b3;
+}
+.playback-rate-container {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.playback-rate-container label {
+  margin-right: 10px;
+  font-weight: bold;
+}
+
+.playback-rate-container select {
+  padding: 5px;
+  font-size: 14px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+/* General Layout */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.title {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 2.5em;
+}
+
+.dark-mode-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.dark-mode-toggle:hover {
+  background-color: #0056b3;
+}
+
+/* Login & Register Container */
+.auth-container {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 50px;
+}
+
+.login-container, .register-container {
+  width: 45%;
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.input-field {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.auth-button {
+  width: 100%;
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+.auth-button2{
+  width: 10%;
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+.auth-button:hover {
+  background-color: #0056b3;
+}
+.auth-button2:hover {
+  background-color: #0056b3;
+}
+/* Dark Mode */
+body.dark-mode {
+  background-color: #121212;
+  color: #ffffff;
+}
+
+body.dark-mode .login-container, body.dark-mode .register-container {
+  background-color: #333;
+  color: #ffffff;
+}
+
+body.dark-mode .input-field {
+  background-color: #555;
+  color: #ffffff;
+  border: 1px solid #777;
+}
+
+body.dark-mode .auth-button {
+  background-color: #1e88e5;
+}
+
+body.dark-mode .auth-button:hover {
+  background-color: #1565c0;
+}
+body.dark-mode .auth-button2 {
+  background-color: #1e88e5;
+}
+
+body.dark-mode .auth-button2:hover {
+  background-color: #1565c0;
+}
+/* Subjects */
+.subjects-container {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.subject-item {
+  margin: 10px;
+}
+
+.subject-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.1em;
+  transition: background-color 0.3s;
+}
+
+.subject-button:hover {
+  background-color: #0056b3;
+}
+
+/* Chapters */
+.section-title {
+  text-align: center;
+  color: #333;
+  margin-bottom: 10px;
+  font-size: 2em;
+}
+
+.chapters-list, .lectures-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.chapter-item {
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  margin: 10px 0;
+  padding: 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.chapter-item.completed {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+}
+
+.chapter-item:hover {
+  background-color: #f1f1f1;
+}
+
+/* Lectures */
+.lecture-item {
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.lecture-item.watched {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+}
+
+.watched-button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.3s;
+}
+
+.watched-button:hover {
+  background-color: #218838;
+}
+
+/* Progress */
+.progress-container {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.progress-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.watched-progress, .remaining-progress {
+  background-color: #007bff;
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  margin: 0 10px;
+  transition: background-color 0.3s;
+}
+
+.remaining-progress {
+  background-color: #6c757d;
+}
+
+/* Video Player */
+.video-player {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.video-player h2 {
+  margin-bottom: 20px;
+  font-size: 1.5em;
+}
+
+.video-player-container {
+  border: 1px solid #ddd;
+  border-radius: 10px;
+}
+
+body.dark-mode .title {
+  color: #ffffff;
+}
+
+body.dark-mode .subject-button {
+  background-color: #1e88e5;
+  color: white;
+}
+
+body.dark-mode .subject-button:hover {
+  background-color: #1565c0;
+}
+
+body.dark-mode .chapter-item {
+  background-color: #333;
+  border-color: #555;
+}
+
+body.dark-mode .chapter-item:hover {
+  background-color: #444;
+}
+
+body.dark-mode .lecture-item {
+  background-color: #333;
+  border-color: #555;
+}
+
+body.dark-mode .lecture-item.watched {
+  background-color: #4caf50;
+}
+
+body.dark-mode .watched-button {
+  background-color: #4caf50;
+}
+
+body.dark-mode .watched-button:hover {
+  background-color: #388e3c;
+}
+
+body.dark-mode .progress-bar{
+  background-color: #121212;
+}
+
+body.dark-mode .watched-progress, .dark-mode .remaining-progress {
+  background-color: #1e88e5;
+}
+
+body.dark-mode .remaining-progress {
+  background-color: #757575;
+}
+.speed-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.speed-controls label {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.playback-speed-slider {
+  width: 80%;
+  appearance: none;
+  height: 5px;
+  border-radius: 5px;
+  background: #007bff;
+  outline: none;
+}
+
+.playback-speed-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+.playback-speed-slider::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, 0.5);
+}
+
