@@ -157,6 +157,8 @@ app.post('/api/login', async (req, res) => {
 
     const token = jwt.sign({ id: user.id }, SECRET_KEY, { expiresIn: '1h' });
     res.json({ token });
+    const userId = result.rows[0].id;
+    await populateUserLecturesFromExistingData(userId);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });
