@@ -108,8 +108,16 @@ app.post('/api/refresh-lectures', authenticateToken, async (req, res) => {
 
     res.json({ message: 'Lectures refreshed for all users' });
   } catch (err) {
-    console.error('Error refreshing lectures for all users:', err);
-    res.status(500).json({ error: 'Failed to refresh lectures for all users' });
+    if (error.response) {
+      // Server responded with a status other than 2xx
+      console.error('Server Error:', error.response.data);
+    } else if (error.request) {
+      // No response was received
+      console.error('Network Error:', error.request);
+    } else {
+      // Something happened in setting up the request
+      console.error('Error:', error.message);
+    }
   }
 });
 
