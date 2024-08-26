@@ -108,11 +108,13 @@ async function populateUserLecturesFromExistingData(userId) {
       const lectures = await pool.query('SELECT * FROM Lectures WHERE chapter_id = $1', [chapter.id]);
 
       if (lectures.rows.length > 0) {
-        const insertValues = lectures.rows.map(lecture => `(${chapter.id}, ${userId}, '${lecture.name}', '${lecture.file_path}', false, ${lecture.duration})`).join(',');
+        const insertValues = lectures.rows.map(lecture => `(${chapter.id}, ${userId}, '${lecture.name.replace(/'/g, "''")}', '${lecture.file_path.replace(/'/g, "''")}', false, ${lecture.duration})`).join(',');
 
         const insertQuery = `
           INSERT INTO Lectures (chapter_id, user_id, name, file_path, watched, duration)
-          VALUES ${insertValues};
+          VALUES ${insertValues}
+          ON CONFLICT (chapter_id, user_id, name)
+          DO NOTHING;
         `;
         await pool.query(insertQuery);
       }
