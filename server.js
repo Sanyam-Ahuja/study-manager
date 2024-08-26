@@ -269,7 +269,7 @@ app.get('/api/subjects/:subjectId/duration', authenticateToken, async (req, res)
           SUM(CASE WHEN Lectures.watched THEN Lectures.duration ELSE 0 END) AS watched_duration,
           SUM(Lectures.duration) AS total_duration
        FROM Lectures
-       JOIN Chapters ON Lectures.chapter_id = Chapters.id
+       JOIN Chapters ON Lectures.chapter_id = Chapters.xata_id
        WHERE Chapters.subject_id = $1 AND Lectures.user_id = $2`,
       [subjectId, req.user.id]
     );
