@@ -131,7 +131,7 @@ app.post('/api/login', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM Users WHERE username = $1', [username]);
     const user = result.rows[0];
-    
+    const userId = result.rows[0].id;
     if (!user) {
       return res.status(400).json({ error: 'Invalid username or password' });
     }
@@ -140,7 +140,9 @@ app.post('/api/login', async (req, res) => {
     if (!match) {
       return res.status(400).json({ error: 'Invalid username or password' });
     }
-
+    await populateUserLecturesFromExistingData(userId);
+    res.json({ id: userId, username });
+    
     const token = jwt.sign({ id: user.id }, SECRET_KEY, { expiresIn: '1h' });
     res.json({ token });
   } catch (err) {
