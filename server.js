@@ -38,7 +38,7 @@ app.use(bodyParser.json());
 const createTables = async () => {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS Users (
-      id SERIAL PRIMARY KEY,
+      xata_id SERIAL PRIMARY KEY,
       username TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL
     )
@@ -46,15 +46,15 @@ const createTables = async () => {
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS Subjects (
-      id SERIAL PRIMARY KEY,
+      xata_id SERIAL PRIMARY KEY,
       name TEXT UNIQUE NOT NULL
     )
   `);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS Chapters (
-      id SERIAL PRIMARY KEY,
-      subject_id INTEGER REFERENCES Subjects(id),
+      xata_id SERIAL PRIMARY KEY,
+      subject_id INTEGER REFERENCES Subjects(xata_id),
       name TEXT,
       UNIQUE(subject_id, name)
     )
@@ -62,9 +62,9 @@ const createTables = async () => {
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS Lectures (
-      id SERIAL PRIMARY KEY,
-      chapter_id INTEGER REFERENCES Chapters(id),
-      user_id INTEGER REFERENCES Users(id),
+      xata_id SERIAL PRIMARY KEY,
+      chapter_id INTEGER REFERENCES Chapters(xata_id),
+      user_id INTEGER REFERENCES Users(xata_id),
       name TEXT,
       file_path TEXT,
       watched BOOLEAN DEFAULT false,
@@ -86,7 +86,7 @@ app.post('/api/register', async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
     const result = await pool.query(
-      'INSERT INTO Users (username, password) VALUES ($1, $2) RETURNING id',
+      'INSERT INTO Users (username, password) VALUES ($1, $2) RETURNING xata_id',
       [username, hashedPassword]
     );
     const userId = result.rows[0].id;
@@ -225,7 +225,7 @@ app.get('/api/chapters/:chapterId/lectures', authenticateToken, async (req, res)
 app.put('/api/lectures/:lectureId/toggle-watched', authenticateToken, async (req, res) => {
   const { lectureId } = req.params;
   try {
-    const result = await pool.query('SELECT watched FROM Lectures WHERE id = $1 AND user_id = $2', [lectureId, req.user.id]);
+    const result = await pool.query('SELECT watched FROM Lectures WHERE xata_id = $1 AND user_id = $2', [lectureId, req.user.id]);
     const lecture = result.rows[0];
 
     if (!lecture) {
@@ -233,7 +233,7 @@ app.put('/api/lectures/:lectureId/toggle-watched', authenticateToken, async (req
     }
 
     const newWatchedStatus = !lecture.watched;
-    await pool.query('UPDATE Lectures SET watched = $1 WHERE id = $2', [newWatchedStatus, lectureId]);
+    await pool.query('UPDATE Lectures SET watched = $1 WHERE xata_id = $2', [newWatchedStatus, lectureId]);
     res.json({ id: lectureId, watched: newWatchedStatus });
   } catch (err) {
     console.error(err);
