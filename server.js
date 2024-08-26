@@ -24,7 +24,7 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 // PostgreSQL connection using Neon
 const pool = new Pool({
-  connectionString: "postgresql://neondb_owner:F91ZkptcqXQm@ep-winter-hat-a55yv5ct-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require",
+  connectionString: "postgresql://184mc1:xau_Mpv6k2HvmvneR2y3sj7X5epXneLEjFhS2@us-east-1.sql.xata.sh/study-manager:main?sslmode=require",
   ssl: {
     rejectUnauthorized: false // Necessary for connecting to Neon, which uses SSL by default
   }
