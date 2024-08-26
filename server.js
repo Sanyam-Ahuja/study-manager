@@ -107,18 +107,14 @@ async function populateUserLecturesFromExistingData(userId) {
     for (const chapter of chapters.rows) {
       const lectures = await pool.query('SELECT * FROM Lectures WHERE chapter_id = $1', [chapter.id]);
 
-      for (const lecture of lectures.rows) {
-        const existingLecture = await pool.query(
-          'SELECT 1 FROM Lectures WHERE chapter_id = $1 AND user_id = $2 AND name = $3',
-          [chapter.id, userId, lecture.name]
-        );
+      if (lectures.rows.length > 0) {
+        const insertValues = lectures.rows.map(lecture => `(${chapter.id}, ${userId}, '${lecture.name}', '${lecture.file_path}', false, ${lecture.duration})`).join(',');
 
-        if (existingLecture.rowCount === 0) {
-          await pool.query(
-            'INSERT INTO Lectures (chapter_id, user_id, name, file_path, watched, duration) VALUES ($1, $2, $3, $4, $5, $6)',
-            [chapter.id, userId, lecture.name, lecture.file_path, false, lecture.duration]
-          );
-        }
+        const insertQuery = `
+          INSERT INTO Lectures (chapter_id, user_id, name, file_path, watched, duration)
+          VALUES ${insertValues};
+        `;
+        await pool.query(insertQuery);
       }
     }
   } catch (err) {
