@@ -38,7 +38,7 @@ app.use(bodyParser.json());
 const createTables = async () => {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS Users (
-      xata_id SERIAL PRIMARY KEY,
+      xata_id TEXT UNIQUE NOT NULL,
       username TEXT UNIQUE NOT NULL,
       password TEXT NOT NULL
     )
@@ -46,15 +46,15 @@ const createTables = async () => {
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS Subjects (
-      xata_id SERIAL PRIMARY KEY,
+      xata_id TEXT UNIQUE NOT NULL,
       name TEXT UNIQUE NOT NULL
     )
   `);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS Chapters (
-      xata_id SERIAL PRIMARY KEY,
-      subject_id INTEGER REFERENCES Subjects(xata_id),
+      xata_id TEXT UNIQUE NOT NULL,
+      subject_id TEXT REFERENCES Subjects(xata_id),
       name TEXT,
       UNIQUE(subject_id, name)
     )
@@ -62,13 +62,13 @@ const createTables = async () => {
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS Lectures (
-      xata_id SERIAL PRIMARY KEY,
-      chapter_id INTEGER REFERENCES Chapters(xata_id),
-      user_id INTEGER REFERENCES Users(xata_id),
+      xata_id TEXT UNIQUE NOT NULL,
+      chapter_id TEXT REFERENCES Chapters(xata_id),
+      user_id TEXT REFERENCES Users(xata_id),
       name TEXT,
       file_path TEXT,
       watched BOOLEAN DEFAULT false,
-      duration INTEGER DEFAULT 0,
+      duration TEXT DEFAULT 0,
       UNIQUE(chapter_id, user_id, name)
     )
   `);
