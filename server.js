@@ -7,14 +7,14 @@ const cors = require('cors');
 require('dotenv').config();
 const XataClient = require('@xata.io/client').default;
 
-
+console.log(XataClient);
 
 // Initialize the Xata client
 const xata = new XataClient({
   apiKey: "xau_Mpv6k2HvmvneR2y3sj7X5epXneLEjFhS2",
   databaseURL: "https://Sanyam-Ahuja-s-workspace-184mc1.us-east-1.xata.sh/db/study-manager:main"
 });
-
+console.log(XataClient);
 const SECRET_KEY = process.env.SECRET_KEY || 'your-secret-key';
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -221,4 +221,4 @@ app.use('/lectures', express.static(path.join(__dirname, 'lectures')));
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-console.log(XataClient);
+
