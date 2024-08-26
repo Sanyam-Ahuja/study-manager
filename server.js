@@ -1,24 +1,21 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const path = require('path');
-const cors = require('cors');
-require('dotenv').config();
-const XataClient = require('@xata.io/client').default;
+// server.js
+import express from 'express';
+import bodyParser from 'body-parser';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+import { XataClient } from '@xata.io/client';
 
-console.log(XataClient);
+dotenv.config();
 
-// Initialize the Xata client
-const xata = new XataClient({
-  apiKey: "xau_Mpv6k2HvmvneR2y3sj7X5epXneLEjFhS2",
-  databaseURL: "https://Sanyam-Ahuja-s-workspace-184mc1.us-east-1.xata.sh/db/study-manager:main"
-});
-console.log(XataClient);
-const SECRET_KEY = process.env.SECRET_KEY || 'your-secret-key';
+// Initialize the Express app
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Middleware
 const corsOptions = {
   origin: 'https://study-manager-eight.vercel.app',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -28,8 +25,43 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
-
 app.use(bodyParser.json());
+
+// Handle __dirname and __filename in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Initialize the Xata client
+const xata = new XataClient({
+  apiKey:"xau_Mpv6k2HvmvneR2y3sj7X5epXneLEjFhS2",
+  dbURL: "https://Sanyam-Ahuja-s-workspace-184mc1.us-east-1.xata.sh/db/study-manager:main // Ensure this is correctly set in your .env"
+});
+
+// Function to populate user lectures
+async function populateUserLecturesFromExistingData(userId) {
+  try {
+    const chapters = await xata.db.Chapters.getAll();
+
+    for (const chapter of chapters) {
+      const lectures = await xata.db.Lectures.filter({ chapter_id: chapter.xata_id }).getMany();
+
+      if (lectures.length > 0) {
+        for (const lecture of lectures) {
+          await xata.db.Lectures.create({
+            chapter_id: chapter.xata_id,
+            user_id: userId,
+            name: lecture.name,
+            file_path: lecture.file_path,
+            watched: false,
+            duration: lecture.duration || 0
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error populating user lectures:', err);
+  }
+}
 
 // Register new user and populate their lectures
 app.post('/api/register', async (req, res) => {
@@ -57,32 +89,6 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// Populate lectures for a new user based on existing subjects and chapters
-async function populateUserLecturesFromExistingData(userId) {
-  try {
-    const chapters = await xata.db.Chapters.getAll();
-
-    for (const chapter of chapters) {
-      const lectures = await xata.db.Lectures.filter({ chapter_id: chapter.xata_id }).getMany();
-
-      if (lectures.length > 0) {
-        for (const lecture of lectures) {
-          await xata.db.Lectures.create({
-            chapter_id: chapter.xata_id,
-            user_id: userId,
-            name: lecture.name,
-            file_path: lecture.file_path,
-            watched: false,
-            duration: lecture.duration || 0
-          });
-        }
-      }
-    }
-  } catch (err) {
-    console.error('Error populating user lectures:', err);
-  }
-}
-
 // Login existing user
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
@@ -98,7 +104,7 @@ app.post('/api/login', async (req, res) => {
       return res.status(400).json({ error: 'Invalid username or password' });
     }
 
-    const token = jwt.sign({ id: user.xata_id }, SECRET_KEY, { expiresIn: '1h' });
+    const token = jwt.sign({ id: user.xata_id }, process.env.SECRET_KEY || 'your-secret-key', { expiresIn: '1h' });
 
     // Populate lectures for the user if needed
     await populateUserLecturesFromExistingData(user.xata_id);
@@ -115,7 +121,7 @@ function authenticateToken(req, res, next) {
   const token = req.headers['authorization'];
   if (!token) return res.status(401).json({ error: 'Access denied' });
 
-  jwt.verify(token, SECRET_KEY, (err, user) => {
+  jwt.verify(token, process.env.SECRET_KEY || 'your-secret-key', (err, user) => {
     if (err) return res.status(403).json({ error: 'Invalid token' });
     req.user = user;
     next();
@@ -218,7 +224,7 @@ app.get('/api/subjects/:subjectId/duration', authenticateToken, async (req, res)
 // Serve static files
 app.use('/lectures', express.static(path.join(__dirname, 'lectures')));
 
+// Start the server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
