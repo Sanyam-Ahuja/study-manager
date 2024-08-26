@@ -13,6 +13,7 @@
     "@ffprobe-installer/ffprobe": "^2.1.2",
     "axios": "^1.7.2",
     "bcrypt": "^5.1.1",
+    "@xata.io/client": "^0.30.0",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
