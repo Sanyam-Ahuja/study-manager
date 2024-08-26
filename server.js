@@ -5,9 +5,9 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const cors = require('cors');
 require('dotenv').config();
+const XataClient = require('@xata.io/client').default;
 
-// Import the Xata SDK
-const { XataClient } = require('@xata.io/client');
+app.use(bodyParser.json());
 
 // Initialize the Xata client
 const xata = new XataClient({
@@ -221,3 +221,4 @@ app.use('/lectures', express.static(path.join(__dirname, 'lectures')));
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+console.log(XataClient);
