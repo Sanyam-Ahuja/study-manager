@@ -197,8 +197,8 @@ app.get('/api/chapters/:chapterId/lectures', authenticateToken, async (req, res)
     const result = await pool.query(
       `SELECT Lectures.*, Subjects.name AS subject_name, Chapters.name AS chapter_name
        FROM Lectures
-       JOIN Chapters ON Lectures.chapter_id = Chapters.id
-       JOIN Subjects ON Chapters.subject_id = Subjects.id
+       JOIN Chapters ON Lectures.chapter_id = Chapters.xata_id
+       JOIN Subjects ON Chapters.subject_id = Subjects.xata_id
        WHERE Lectures.chapter_id = $1 AND Lectures.user_id = $2
        ORDER BY Lectures.name`,
       [chapterId, req.user.id]
