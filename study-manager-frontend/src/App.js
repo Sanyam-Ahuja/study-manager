@@ -18,7 +18,7 @@ function App() {
   const [password, setPassword] = useState('');
   const [token, setToken] = useState('');
   const [playbackSpeed, setPlaybackSpeed] = useState(2); // State for playback speed
-
+  const [isAdmin, setIsAdmin] = useState(true);
   useEffect(() => {
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
     setIsDarkMode(savedDarkMode);
@@ -88,7 +88,18 @@ function App() {
       })
       .catch(error => console.error(error));
   };
-
+  const refreshAllUserLectures = () => {
+    axios.post('https://study-manager-production.up.railway.app/api/refresh-lectures', {}, {
+      headers: { 'Authorization': token }
+    })
+      .then(response => {
+        alert(response.data.message);
+      })
+      .catch(error => {
+        console.error(error);
+        alert('Failed to refresh lectures for all users');
+      });
+  };
   const fetchLectures = (chapterId, authToken) => {
     axios.get(`https://study-manager-production.up.railway.app/api/chapters/${chapterId}/lectures`, {
       headers: { 'Authorization': authToken }
@@ -192,6 +203,13 @@ function App() {
     setIsLoggedIn(false);
     localStorage.removeItem('token');
   };
+  {isAdmin && (
+    <div className="admin-controls">
+      <button className="refresh-button" onClick={refreshAllUserLectures}>
+        Refresh All Users' Lectures
+      </button>
+    </div>
+  )}
 
   return (
     <div className="app-container">

@@ -92,6 +92,30 @@ app.post('/api/register', async (req, res) => {
     res.status(400).json({ error: 'Error during registration' });
   }
 });
+// Refresh lectures for all users
+app.post('/api/refresh-lectures', authenticateToken, async (req, res) => {
+  try {
+    // Check if the user is an admin (you can define how to check if a user is an admin)
+    const isAdmin = req.user && req.user.isAdmin;  // Assuming you have an isAdmin flag
+
+    if (!isAdmin) {
+      return res.status(403).json({ error: 'Access denied. Admins only.' });
+    }
+
+    const users = await pool.query('SELECT id FROM Users');
+    const userIds = users.rows.map(user => user.id);
+
+    for (const userId of userIds) {
+      await populateUserLecturesFromExistingData(userId);
+    }
+
+    res.json({ message: 'Lectures refreshed for all users' });
+  } catch (err) {
+    console.error('Error refreshing lectures for all users:', err);
+    res.status(500).json({ error: 'Failed to refresh lectures for all users' });
+  }
+});
+
 
 // Populate lectures for a new user based on existing subjects and chapters
 // Populate lectures for a new user based on existing subjects and chapters
