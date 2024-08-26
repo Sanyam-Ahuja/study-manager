@@ -18,7 +18,6 @@ function App() {
   const [password, setPassword] = useState('');
   const [token, setToken] = useState('');
   const [playbackSpeed, setPlaybackSpeed] = useState(2); // State for playback speed
-  const [isAdmin, setIsAdmin] = useState(true);
   useEffect(() => {
     const savedDarkMode = localStorage.getItem('darkMode') === 'true';
     setIsDarkMode(savedDarkMode);
@@ -203,13 +202,13 @@ function App() {
     setIsLoggedIn(false);
     localStorage.removeItem('token');
   };
-  {isAdmin && (
+   
     <div className="admin-controls">
       <button className="refresh-button" onClick={refreshAllUserLectures}>
         Refresh All Users' Lectures
       </button>
     </div>
-  )}
+  
 
   return (
     <div className="app-container">
