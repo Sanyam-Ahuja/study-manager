@@ -2,19 +2,23 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const path = require('path');
-const fs = require('fs');
-const { execSync } = require('child_process');
+const { Pool } = require('pg');  // Use pg for PostgreSQL
 require('dotenv').config();
-
+const SECRET_KEY = process.env.SECRET_KEY || 'your-secret-key';
 const app = express();
 const PORT = process.env.PORT || 5000;
-const SECRET_KEY = process.env.SECRET_KEY || 'your-secret-key';
 
-// Update CORS configuration to allow all origins
+// PostgreSQL connection using Neon
+const pool = new Pool({
+  connectionString: "postgresql://neondb_owner:F91ZkptcqXQm@ep-winter-hat-a55yv5ct-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require",
+  ssl: {
+    rejectUnauthorized: false // Necessary for connecting to Neon, which uses SSL by default
+  }
+});
+
 app.use(cors({
   origin: '*',
   credentials: true,
@@ -25,108 +29,112 @@ app.use(cors({
 
 app.use(bodyParser.json());
 
-const db = new sqlite3.Database('study-manager.db');
-
 // Create tables if they don't exist
-db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS Users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE,
-    password TEXT
-  )`);
+const createTables = async () => {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS Users (
+      id SERIAL PRIMARY KEY,
+      username TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL
+    )
+  `);
 
-  db.run(`CREATE TABLE IF NOT EXISTS Subjects (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT UNIQUE
-  )`);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS Subjects (
+      id SERIAL PRIMARY KEY,
+      name TEXT UNIQUE NOT NULL
+    )
+  `);
 
-  db.run(`CREATE TABLE IF NOT EXISTS Chapters (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    subject_id INTEGER,
-    name TEXT,
-    UNIQUE(subject_id, name),
-    FOREIGN KEY (subject_id) REFERENCES Subjects(id)
-  )`);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS Chapters (
+      id SERIAL PRIMARY KEY,
+      subject_id INTEGER REFERENCES Subjects(id),
+      name TEXT,
+      UNIQUE(subject_id, name)
+    )
+  `);
 
-  db.run(`CREATE TABLE IF NOT EXISTS Lectures (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    chapter_id INTEGER,
-    user_id INTEGER,
-    name TEXT,
-    file_path TEXT,
-    watched BOOLEAN DEFAULT false,
-    duration INTEGER DEFAULT 0,
-    UNIQUE(chapter_id, user_id, name),
-    FOREIGN KEY (chapter_id) REFERENCES Chapters(id),
-    FOREIGN KEY (user_id) REFERENCES Users(id)
-  )`);
-});
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS Lectures (
+      id SERIAL PRIMARY KEY,
+      chapter_id INTEGER REFERENCES Chapters(id),
+      user_id INTEGER REFERENCES Users(id),
+      name TEXT,
+      file_path TEXT,
+      watched BOOLEAN DEFAULT false,
+      duration INTEGER DEFAULT 0,
+      UNIQUE(chapter_id, user_id, name)
+    )
+  `);
+};
+
+createTables();
 
 // Register new user and populate their lectures
-app.post('/api/register', (req, res) => {
+app.post('/api/register', async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
     return res.status(400).json({ error: 'Username and password are required' });
   }
 
-  bcrypt.hash(password, 10, (err, hashedPassword) => {
-    if (err) {
-      return res.status(500).json({ error: 'Error hashing password' });
-    }
-
-    db.run(`INSERT INTO Users (username, password) VALUES (?, ?)`, [username, hashedPassword], function(err) {
-      if (err) {
-        return res.status(400).json({ error: 'Error during registration' });
-      }
-
-      const userId = this.lastID;
-      populateUserLecturesFromExistingData(userId);
-      res.json({ id: userId, username });
-    });
-  });
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const result = await pool.query(
+      'INSERT INTO Users (username, password) VALUES ($1, $2) RETURNING id',
+      [username, hashedPassword]
+    );
+    const userId = result.rows[0].id;
+    await populateUserLecturesFromExistingData(userId);
+    res.json({ id: userId, username });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: 'Error during registration' });
+  }
 });
 
 // Populate lectures for a new user based on existing subjects and chapters
-function populateUserLecturesFromExistingData(userId) {
-  db.all(`SELECT * FROM Chapters`, [], (err, chapters) => {
-    if (err) {
-      console.error('Error fetching chapters:', err);
-      return;
+async function populateUserLecturesFromExistingData(userId) {
+  try {
+    const chapters = await pool.query('SELECT * FROM Chapters');
+
+    for (const chapter of chapters.rows) {
+      const lectures = await pool.query('SELECT * FROM Lectures WHERE chapter_id = $1', [chapter.id]);
+
+      for (const lecture of lectures.rows) {
+        await pool.query(
+          'INSERT INTO Lectures (chapter_id, user_id, name, file_path, watched, duration) VALUES ($1, $2, $3, $4, $5, $6)',
+          [chapter.id, userId, lecture.name, lecture.file_path, false, lecture.duration]
+        );
+      }
     }
-
-    chapters.forEach(chapter => {
-      db.all(`SELECT * FROM Lectures WHERE chapter_id = ?`, [chapter.id], (err, lectures) => {
-        if (err) {
-          console.error('Error fetching lectures:', err);
-          return;
-        }
-
-        lectures.forEach(lecture => {
-          db.run(`INSERT INTO Lectures (chapter_id, user_id, name, file_path, watched, duration) VALUES (?, ?, ?, ?, ?, ?)`,
-            [chapter.id, userId, lecture.name, lecture.file_path, false, lecture.duration]);
-        });
-      });
-    });
-  });
+  } catch (err) {
+    console.error('Error populating user lectures:', err);
+  }
 }
 
 // Login existing user
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
-  db.get(`SELECT * FROM Users WHERE username = ?`, [username], (err, user) => {
+  try {
+    const result = await pool.query('SELECT * FROM Users WHERE username = $1', [username]);
+    const user = result.rows[0];
+
     if (!user) {
       return res.status(400).json({ error: 'Invalid username or password' });
     }
 
-    bcrypt.compare(password, user.password, (err, match) => {
-      if (!match) {
-        return res.status(400).json({ error: 'Invalid username or password' });
-      }
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      return res.status(400).json({ error: 'Invalid username or password' });
+    }
 
-      const token = jwt.sign({ id: user.id }, SECRET_KEY, { expiresIn: '1h' });
-      res.json({ token });
-    });
-  });
+    const token = jwt.sign({ id: user.id }, SECRET_KEY, { expiresIn: '1h' });
+    res.json({ token });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // Authenticate token middleware
@@ -142,104 +150,120 @@ function authenticateToken(req, res, next) {
 }
 
 // Fetch subjects
-app.get('/api/subjects', authenticateToken, (req, res) => {
-  db.all(`SELECT * FROM Subjects`, [], (err, subjects) => {
-    if (err) {
-      return res.status(400).json({ error: err.message });
-    }
-    res.json(subjects);
-  });
+app.get('/api/subjects', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM Subjects');
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message });
+  }
 });
 
 // Fetch chapters by subject
-app.get('/api/subjects/:subjectId/chapters', authenticateToken, (req, res) => {
+app.get('/api/subjects/:subjectId/chapters', authenticateToken, async (req, res) => {
   const { subjectId } = req.params;
-  db.all(`SELECT * FROM Chapters WHERE subject_id = ?`, [subjectId], (err, chapters) => {
-    if (err) {
-      return res.status(400).json({ error: err.message });
-    }
-    res.json(chapters);
-  });
+  try {
+    const result = await pool.query('SELECT * FROM Chapters WHERE subject_id = $1', [subjectId]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message });
+  }
 });
 
 // Fetch lectures by chapter
-app.get('/api/chapters/:chapterId/lectures', authenticateToken, (req, res) => {
+app.get('/api/chapters/:chapterId/lectures', authenticateToken, async (req, res) => {
   const { chapterId } = req.params;
-  db.all(`SELECT Lectures.*, Subjects.name AS subject_name, Chapters.name AS chapter_name
-          FROM Lectures
-          JOIN Chapters ON Lectures.chapter_id = Chapters.id
-          JOIN Subjects ON Chapters.subject_id = Subjects.id
-          WHERE Lectures.chapter_id = ? AND Lectures.user_id = ?
-          ORDER BY Lectures.name`, [chapterId, req.user.id], (err, lectures) => {
-      if (err) {
-          return res.status(400).json({ error: err.message });
+  try {
+    const result = await pool.query(
+      `SELECT Lectures.*, Subjects.name AS subject_name, Chapters.name AS chapter_name
+       FROM Lectures
+       JOIN Chapters ON Lectures.chapter_id = Chapters.id
+       JOIN Subjects ON Chapters.subject_id = Subjects.id
+       WHERE Lectures.chapter_id = $1 AND Lectures.user_id = $2
+       ORDER BY Lectures.name`,
+      [chapterId, req.user.id]
+    );
+
+    const lecturesWithFilePath = result.rows.map(lecture => {
+      let filePath;
+      if (lecture.subject_name.includes("YT")) {
+        filePath = lecture.file_path;  // Use the YouTube URL as-is
+      } else {
+        const modifiedName = lecture.name.includes('#') ? lecture.name.replace(/#/g, '%23') : lecture.name;
+        filePath = `/lectures/${lecture.subject_name}/${lecture.chapter_name}/${modifiedName}`;
       }
+      return {
+        ...lecture,
+        file_path: filePath
+      };
+    });
 
-      const lecturesWithFilePath = lectures.map(lecture => {
-          let filePath;
-          if (lecture.subject_name.includes("YT")) {
-              filePath = lecture.file_path;  // Use the YouTube URL as-is
-          } else {
-              const modifiedName = lecture.name.includes('#') ? lecture.name.replace(/#/g, '%23') : lecture.name;
-              filePath = `/lectures/${lecture.subject_name}/${lecture.chapter_name}/${modifiedName}`;
-          }
-          return {
-              ...lecture,
-              file_path: filePath
-          };
-      });
-
-      res.json(lecturesWithFilePath);
-  });
+    res.json(lecturesWithFilePath);
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message });
+  }
 });
 
 // Toggle watched status of a lecture
-app.put('/api/lectures/:lectureId/toggle-watched', authenticateToken, (req, res) => {
+app.put('/api/lectures/:lectureId/toggle-watched', authenticateToken, async (req, res) => {
   const { lectureId } = req.params;
-  db.get(`SELECT watched FROM Lectures WHERE id = ? AND user_id = ?`, [lectureId, req.user.id], (err, lecture) => {
+  try {
+    const result = await pool.query('SELECT watched FROM Lectures WHERE id = $1 AND user_id = $2', [lectureId, req.user.id]);
+    const lecture = result.rows[0];
+
     if (!lecture) {
       return res.status(404).json({ error: 'Lecture not found' });
     }
 
     const newWatchedStatus = !lecture.watched;
-    db.run(`UPDATE Lectures SET watched = ? WHERE id = ?`, [newWatchedStatus, lectureId], (err) => {
-      if (err) {
-        return res.status(400).json({ error: err.message });
-      }
-      res.json({ id: lectureId, watched: newWatchedStatus });
-    });
-  });
+    await pool.query('UPDATE Lectures SET watched = $1 WHERE id = $2', [newWatchedStatus, lectureId]);
+    res.json({ id: lectureId, watched: newWatchedStatus });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message });
+  }
 });
 
 // Get total duration of watched and all lectures in a chapter
-app.get('/api/chapters/:chapterId/duration', authenticateToken, (req, res) => {
+app.get('/api/chapters/:chapterId/duration', authenticateToken, async (req, res) => {
   const { chapterId } = req.params;
-  db.get(`SELECT
-            SUM(duration * CASE WHEN watched THEN 1 ELSE 0 END) AS watched_duration,
-            SUM(duration) AS total_duration
-          FROM Lectures
-          WHERE chapter_id = ? AND user_id = ?`, [chapterId, req.user.id], (err, duration) => {
-    if (err) {
-      return res.status(400).json({ error: err.message });
-    }
-    res.json(duration);
-  });
+  try {
+    const result = await pool.query(
+      `SELECT
+          SUM(duration * CASE WHEN watched THEN 1 ELSE 0 END) AS watched_duration,
+          SUM(duration) AS total_duration
+       FROM Lectures
+       WHERE chapter_id = $1 AND user_id = $2`,
+      [chapterId, req.user.id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message });
+  }
 });
 
 // Get total duration of watched and all lectures in a subject
-app.get('/api/subjects/:subjectId/duration', authenticateToken, (req, res) => {
+app.get('/api/subjects/:subjectId/duration', authenticateToken, async (req, res) => {
   const { subjectId } = req.params;
-  db.get(`SELECT
-            SUM(CASE WHEN Lectures.watched THEN Lectures.duration ELSE 0 END) AS watched_duration,
-            SUM(Lectures.duration) AS total_duration
-          FROM Lectures
-          JOIN Chapters ON Lectures.chapter_id = Chapters.id
-          WHERE Chapters.subject_id = ? AND Lectures.user_id = ?`, [subjectId, req.user.id], (err, duration) => {
-    if (err) {
-      return res.status(400).json({ error: err.message });
-    }
-    res.json(duration);
-  });
+  try {
+    const result = await pool.query(
+      `SELECT
+          SUM(CASE WHEN Lectures.watched THEN Lectures.duration ELSE 0 END) AS watched_duration,
+          SUM(Lectures.duration) AS total_duration
+       FROM Lectures
+       JOIN Chapters ON Lectures.chapter_id = Chapters.id
+       WHERE Chapters.subject_id = $1 AND Lectures.user_id = $2`,
+      [subjectId, req.user.id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ error: err.message });
+  }
 });
 
 // Serve static files
