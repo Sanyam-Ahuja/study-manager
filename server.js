@@ -94,6 +94,7 @@ app.post('/api/register', async (req, res) => {
 });
 
 // Populate lectures for a new user based on existing subjects and chapters
+// Populate lectures for a new user based on existing subjects and chapters
 async function populateUserLecturesFromExistingData(userId) {
   try {
     const chapters = await pool.query('SELECT * FROM Chapters');
@@ -102,16 +103,24 @@ async function populateUserLecturesFromExistingData(userId) {
       const lectures = await pool.query('SELECT * FROM Lectures WHERE chapter_id = $1', [chapter.id]);
 
       for (const lecture of lectures.rows) {
-        await pool.query(
-          'INSERT INTO Lectures (chapter_id, user_id, name, file_path, watched, duration) VALUES ($1, $2, $3, $4, $5, $6)',
-          [chapter.id, userId, lecture.name, lecture.file_path, false, lecture.duration]
+        const existingLecture = await pool.query(
+          'SELECT 1 FROM Lectures WHERE chapter_id = $1 AND user_id = $2 AND name = $3',
+          [chapter.id, userId, lecture.name]
         );
+
+        if (existingLecture.rowCount === 0) {
+          await pool.query(
+            'INSERT INTO Lectures (chapter_id, user_id, name, file_path, watched, duration) VALUES ($1, $2, $3, $4, $5, $6)',
+            [chapter.id, userId, lecture.name, lecture.file_path, false, lecture.duration]
+          );
+        }
       }
     }
   } catch (err) {
     console.error('Error populating user lectures:', err);
   }
 }
+
 
 // Login existing user
 app.post('/api/login', async (req, res) => {
