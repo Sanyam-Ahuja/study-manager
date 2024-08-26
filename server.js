@@ -131,7 +131,7 @@ app.post('/api/login', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM Users WHERE username = $1', [username]);
     const user = result.rows[0];
-    const userId = result.rows[0].id;
+
     if (!user) {
       return res.status(400).json({ error: 'Invalid username or password' });
     }
@@ -140,16 +140,20 @@ app.post('/api/login', async (req, res) => {
     if (!match) {
       return res.status(400).json({ error: 'Invalid username or password' });
     }
-    await populateUserLecturesFromExistingData(userId);
-    res.json({ id: userId, username });
-    
+
     const token = jwt.sign({ id: user.id }, SECRET_KEY, { expiresIn: '1h' });
+    
+    // Call populateUserLecturesFromExistingData, but don't respond here
+    await populateUserLecturesFromExistingData(user.id);
+
+    // Respond with the token after everything is done
     res.json({ token });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 // Authenticate token middleware
 function authenticateToken(req, res, next) {
