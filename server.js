@@ -1,7 +1,6 @@
 // server.js
 const express = require('express');
 const bodyParser = require('body-parser');
-const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const path = require('path');
@@ -10,7 +9,19 @@ require('dotenv').config();
 const SECRET_KEY = process.env.SECRET_KEY || 'your-secret-key';
 const app = express();
 const PORT = process.env.PORT || 5000;
+const cors = require('cors');
 
+const corsOptions = {
+  origin: 'https://study-manager-eight.vercel.app',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
+app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 // PostgreSQL connection using Neon
 const pool = new Pool({
   connectionString: "postgresql://neondb_owner:F91ZkptcqXQm@ep-winter-hat-a55yv5ct-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require",
@@ -19,13 +30,7 @@ const pool = new Pool({
   }
 });
 
-app.use(cors({
-  origin: '*',
-  credentials: true,
-  exposedHeaders: ['Authorization'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+
 
 app.use(bodyParser.json());
 
@@ -145,7 +150,9 @@ app.post('/api/login', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM Users WHERE username = $1', [username]);
     const user = result.rows[0];
-
+    const userId = result.rows[0].id;
+    await populateUserLecturesFromExistingData(userId);
+    res.json({ id: userId, username });
     if (!user) {
       return res.status(400).json({ error: 'Invalid username or password' });
     }
@@ -157,9 +164,6 @@ app.post('/api/login', async (req, res) => {
 
     const token = jwt.sign({ id: user.id }, SECRET_KEY, { expiresIn: '1h' });
     res.json({ token });
-    const userId = result.rows[0].id;
-    await populateUserLecturesFromExistingData(userId);
-    res.json({ id: userId, username });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });
