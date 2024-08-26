@@ -263,6 +263,11 @@ function App() {
                 </button>
               </div>
             ))}
+             <div className="admin-controls">
+              <button className="refresh-button" onClick={refreshAllUserLectures}>
+                Refresh All Users' Lectures
+              </button>
+            </div>
           </div>
           {selectedSubject && (
             <>
