@@ -87,18 +87,6 @@ function App() {
       })
       .catch(error => console.error(error));
   };
-  const refreshAllUserLectures = () => {
-    axios.post('https://study-manager-production.up.railway.app/api/refresh-lectures', {}, {
-      headers: { 'Authorization': token }
-    })
-      .then(response => {
-        alert(response.data.message);
-      })
-      .catch(error => {
-        console.error(error);
-        alert('Failed to refresh lectures for all users');
-      });
-  };
   const fetchLectures = (chapterId, authToken) => {
     axios.get(`https://study-manager-production.up.railway.app/api/chapters/${chapterId}/lectures`, {
       headers: { 'Authorization': authToken }
@@ -263,11 +251,6 @@ function App() {
                 </button>
               </div>
             ))}
-             <div className="admin-controls">
-              <button className="refresh-button" onClick={refreshAllUserLectures}>
-                Refresh All Users' Lectures
-              </button>
-            </div>
           </div>
           {selectedSubject && (
             <>

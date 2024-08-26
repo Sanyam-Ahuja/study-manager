@@ -1,3 +1,4 @@
+// server.js
 const express = require('express');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
@@ -5,7 +6,6 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const { Pool } = require('pg');  // Use pg for PostgreSQL
 require('dotenv').config();
-const axios = require('axios'); // Import axios
 const SECRET_KEY = process.env.SECRET_KEY || 'your-secret-key';
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -29,6 +29,8 @@ const pool = new Pool({
     rejectUnauthorized: false // Necessary for connecting to Neon, which uses SSL by default
   }
 });
+
+
 
 app.use(bodyParser.json());
 
@@ -74,15 +76,6 @@ const createTables = async () => {
 
 createTables();
 
-// Notify Flask application about new user
-async function notifyFlask(userId) {
-  try {
-    await axios.post('backend-for-adding-lectures-production.up.railway.app:5001/process_user', { user_id: userId });
-  } catch (err) {
-    console.error('Error notifying Flask app:', err.message);
-  }
-}
-
 // Register new user and populate their lectures
 app.post('/api/register', async (req, res) => {
   const { username, password } = req.body;
@@ -97,10 +90,7 @@ app.post('/api/register', async (req, res) => {
       [username, hashedPassword]
     );
     const userId = result.rows[0].id;
-    
-    // Notify Flask with the new user ID
-    await notifyFlask(userId);
-    
+    await populateUserLecturesFromExistingData(userId);
     res.json({ id: userId, username });
   } catch (err) {
     console.error(err);
@@ -108,23 +98,7 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// Refresh lectures for all users
-app.post('/api/refresh-lectures', authenticateToken, async (req, res) => {
-  try {
-    const users = await pool.query('SELECT id FROM Users');
-    const userIds = users.rows.map(user => user.id);
-
-    for (const userId of userIds) {
-      await populateUserLecturesFromExistingData(userId);
-    }
-
-    res.json({ message: 'Lectures refreshed for all users' });
-  } catch (err) {
-    console.error('Error refreshing lectures:', err.message);
-    res.status(500).json({ error: 'Error refreshing lectures' });
-  }
-});
-
+// Populate lectures for a new user based on existing subjects and chapters
 // Populate lectures for a new user based on existing subjects and chapters
 async function populateUserLecturesFromExistingData(userId) {
   try {
@@ -151,6 +125,7 @@ async function populateUserLecturesFromExistingData(userId) {
     console.error('Error populating user lectures:', err);
   }
 }
+
 
 // Login existing user
 app.post('/api/login', async (req, res) => {
