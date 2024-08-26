@@ -7,7 +7,7 @@ const cors = require('cors');
 require('dotenv').config();
 const XataClient = require('@xata.io/client').default;
 
-app.use(bodyParser.json());
+
 
 // Initialize the Xata client
 const xata = new XataClient({
