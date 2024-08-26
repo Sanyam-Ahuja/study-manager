@@ -206,12 +206,8 @@ app.get('/api/chapters/:chapterId/lectures', authenticateToken, async (req, res)
 
     const lecturesWithFilePath = result.rows.map(lecture => {
       let filePath;
-      if (lecture.subject_name.includes("YT")) {
+   
         filePath = lecture.file_path;  // Use the YouTube URL as-is
-      } else {
-        const modifiedName = lecture.name.includes('#') ? lecture.name.replace(/#/g, '%23') : lecture.name;
-        filePath = `/lectures/${lecture.subject_name}/${lecture.chapter_name}/${modifiedName}`;
-      }
       return {
         ...lecture,
         file_path: filePath
