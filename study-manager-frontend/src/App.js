@@ -302,7 +302,7 @@ function App() {
               )}
               <div className="lectures-container">
                 <h2 className="section-title">Lectures</h2>
-                <h2>Chapter Progress</h2>
+                <h2>Chapter's Progress</h2>
                 <div>
                   Watched Progress: {chapterProgress.watchedProgress}
                 </div>
