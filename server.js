@@ -90,7 +90,6 @@ app.post('/api/register', async (req, res) => {
       [username, hashedPassword]
     );
     const userId = result.rows[0].id;
-    await populateUserLecturesFromExistingData(userId);
     res.json({ id: userId, username });
   } catch (err) {
     console.error(err);
@@ -150,9 +149,7 @@ app.post('/api/login', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM Users WHERE username = $1', [username]);
     const user = result.rows[0];
-    const userId = result.rows[0].id;
-    await populateUserLecturesFromExistingData(userId);
-    res.json({ id: userId, username });
+    
     if (!user) {
       return res.status(400).json({ error: 'Invalid username or password' });
     }
