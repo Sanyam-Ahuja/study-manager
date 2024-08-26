@@ -134,6 +134,8 @@ app.post('/api/login', async (req, res) => {
     }
 
     const match = await bcrypt.compare(password, user.password);
+    const userId = result.rows[0].id;
+    await populateUserLecturesFromExistingData(userId);
     if (!match) {
       return res.status(400).json({ error: 'Invalid username or password' });
     }
