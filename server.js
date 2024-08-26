@@ -159,6 +159,7 @@ app.post('/api/login', async (req, res) => {
     res.json({ token });
     const userId = result.rows[0].id;
     await populateUserLecturesFromExistingData(userId);
+    res.json({ id: userId, username });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });
