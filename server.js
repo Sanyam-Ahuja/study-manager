@@ -3,78 +3,20 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const path = require('path');
-const { Pool } = require('pg');  // Use pg for PostgreSQL
 require('dotenv').config();
+const cors = require('cors');
+const { createClient } = require('@supabase/supabase-js');
+
 const SECRET_KEY = process.env.SECRET_KEY || 'your-secret-key';
 const app = express();
 const PORT = process.env.PORT || 5000;
-const cors = require('cors');
 
-const corsOptions = {
-  origin: 'https://study-manager-eight.vercel.app',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-};
-
-app.use(cors(corsOptions));
-
-// Handle preflight requests
-app.options('*', cors(corsOptions));
-// PostgreSQL connection using Neon
-const pool = new Pool({
-  connectionString: "postgresql://neondb_owner:F91ZkptcqXQm@ep-winter-hat-a55yv5ct-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require",
-  ssl: {
-    rejectUnauthorized: false // Necessary for connecting to Neon, which uses SSL by default
-  }
-});
-
-
-
+app.use(cors({ origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], allowedHeaders: ['Content-Type', 'Authorization'], credentials: true }));
 app.use(bodyParser.json());
 
-// Create tables if they don't exist
-const createTables = async () => {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS Users (
-      id SERIAL PRIMARY KEY,
-      username TEXT UNIQUE NOT NULL,
-      password TEXT NOT NULL
-    )
-  `);
-
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS Subjects (
-      id SERIAL PRIMARY KEY,
-      name TEXT UNIQUE NOT NULL
-    )
-  `);
-
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS Chapters (
-      id SERIAL PRIMARY KEY,
-      subject_id INTEGER REFERENCES Subjects(id),
-      name TEXT,
-      UNIQUE(subject_id, name)
-    )
-  `);
-
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS Lectures (
-      id SERIAL PRIMARY KEY,
-      chapter_id INTEGER REFERENCES Chapters(id),
-      user_id INTEGER REFERENCES Users(id),
-      name TEXT,
-      file_path TEXT,
-      watched BOOLEAN DEFAULT false,
-      duration INTEGER DEFAULT 0,
-      UNIQUE(chapter_id, user_id, name)
-    )
-  `);
-};
-
-createTables();
+const supabaseUrl = "https://ashrzqwhbvbxgrvvbxdr.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzaHJ6cXdoYnZieGdydnZieGRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQ2NzgwODYsImV4cCI6MjA0MDI1NDA4Nn0._HO8PGvO5YG5vVj-cJDJeT3eKL_6Ht6GVe987_xqoAY";
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Register new user and populate their lectures
 app.post('/api/register', async (req, res) => {
@@ -85,11 +27,14 @@ app.post('/api/register', async (req, res) => {
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const result = await pool.query(
-      'INSERT INTO Users (username, password) VALUES ($1, $2) RETURNING id',
-      [username, hashedPassword]
-    );
-    const userId = result.rows[0].id;
+    const { data: user, error } = await supabase
+      .from('Users')
+      .insert([{ username, password: hashedPassword }])
+      .select('*');
+
+    if (error) throw error;
+
+    const userId = user[0].id;
     await populateUserLecturesFromExistingData(userId);
     res.json({ id: userId, username });
   } catch (err) {
@@ -98,25 +43,53 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
-// Populate lectures for a new user based on existing subjects and chapters
-// Populate lectures for a new user based on existing subjects and chapters
 async function populateUserLecturesFromExistingData(userId) {
   try {
-    const chapters = await pool.query('SELECT * FROM Chapters');
+    const { data: chapters, error: chapterError } = await supabase
+      .from('Chapters')
+      .select('*');
 
-    for (const chapter of chapters.rows) {
-      const lectures = await pool.query('SELECT * FROM Lectures WHERE chapter_id = $1', [chapter.id]);
+    if (chapterError) throw chapterError;
 
-      if (lectures.rows.length > 0) {
-        const insertValues = lectures.rows.map(lecture => `(${chapter.id}, ${userId}, '${lecture.name.replace(/'/g, "''")}', '${lecture.file_path.replace(/'/g, "''")}', false, ${lecture.duration})`).join(',');
+    for (const chapter of chapters) {
+      // Fetch existing user lectures for this chapter
+      const { data: existingUserLectures, error: existingLecturesError } = await supabase
+        .from('User_Lectures')
+        .select('name')
+        .eq('chapter_id', chapter.id)
+        .eq('user_id', userId);
 
-        const insertQuery = `
-          INSERT INTO Lectures (chapter_id, user_id, name, file_path, watched, duration)
-          VALUES ${insertValues}
-          ON CONFLICT (chapter_id, user_id, name)
-          DO NOTHING;
-        `;
-        await pool.query(insertQuery);
+      if (existingLecturesError) throw existingLecturesError;
+
+      // Extract the names of the existing lectures
+      const existingLectureNames = existingUserLectures.map(lecture => lecture.name);
+
+      // Fetch all lectures for this chapter
+      const { data: lectures, error: lectureError } = await supabase
+        .from('Lectures')
+        .select('*')
+        .eq('chapter_id', chapter.id);
+
+      if (lectureError) throw lectureError;
+
+      // Filter out lectures that already exist in User_Lectures
+      const newLectures = lectures.filter(lecture => !existingLectureNames.includes(lecture.name));
+
+      if (newLectures.length > 0) {
+        const insertValues = newLectures.map(lecture => ({
+          chapter_id: chapter.id,
+          user_id: userId,
+          name: lecture.name,
+          file_path: lecture.file_path,
+          watched: false,
+          duration: lecture.duration
+        }));
+
+        const { error: insertError } = await supabase
+          .from('User_Lectures')
+          .insert(insertValues);
+
+        if (insertError) throw insertError;
       }
     }
   } catch (err) {
@@ -125,12 +98,19 @@ async function populateUserLecturesFromExistingData(userId) {
 }
 
 
+
 // Login existing user
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
   try {
-    const result = await pool.query('SELECT * FROM Users WHERE username = $1', [username]);
-    const user = result.rows[0];
+    const { data: users, error } = await supabase
+      .from('Users')
+      .select('*')
+      .eq('username', username);
+
+    if (error) throw error;
+
+    const user = users[0];
 
     if (!user) {
       return res.status(400).json({ error: 'Invalid username or password' });
@@ -142,18 +122,14 @@ app.post('/api/login', async (req, res) => {
     }
 
     const token = jwt.sign({ id: user.id }, SECRET_KEY, { expiresIn: '1h' });
-    
-    // Call populateUserLecturesFromExistingData, but don't respond here
-    await populateUserLecturesFromExistingData(user.id);
 
-    // Respond with the token after everything is done
+    await populateUserLecturesFromExistingData(user.id);
     res.json({ token });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-
 
 // Authenticate token middleware
 function authenticateToken(req, res, next) {
@@ -170,8 +146,13 @@ function authenticateToken(req, res, next) {
 // Fetch subjects
 app.get('/api/subjects', authenticateToken, async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM Subjects');
-    res.json(result.rows);
+    const { data: subjects, error } = await supabase
+      .from('Subjects')
+      .select('*');
+
+    if (error) throw error;
+
+    res.json(subjects);
   } catch (err) {
     console.error(err);
     res.status(400).json({ error: err.message });
@@ -182,8 +163,14 @@ app.get('/api/subjects', authenticateToken, async (req, res) => {
 app.get('/api/subjects/:subjectId/chapters', authenticateToken, async (req, res) => {
   const { subjectId } = req.params;
   try {
-    const result = await pool.query('SELECT * FROM Chapters WHERE subject_id = $1', [subjectId]);
-    res.json(result.rows);
+    const { data: chapters, error } = await supabase
+      .from('Chapters')
+      .select('*')
+      .eq('subject_id', subjectId);
+
+    if (error) throw error;
+
+    res.json(chapters);
   } catch (err) {
     console.error(err);
     res.status(400).json({ error: err.message });
@@ -194,27 +181,16 @@ app.get('/api/subjects/:subjectId/chapters', authenticateToken, async (req, res)
 app.get('/api/chapters/:chapterId/lectures', authenticateToken, async (req, res) => {
   const { chapterId } = req.params;
   try {
-    const result = await pool.query(
-      `SELECT Lectures.*, Subjects.name AS subject_name, Chapters.name AS chapter_name
-       FROM Lectures
-       JOIN Chapters ON Lectures.chapter_id = Chapters.id
-       JOIN Subjects ON Chapters.subject_id = Subjects.id
-       WHERE Lectures.chapter_id = $1 AND Lectures.user_id = $2
-       ORDER BY Lectures.name`,
-      [chapterId, req.user.id]
-    );
+    const { data: lectures, error } = await supabase
+      .from('User_Lectures')
+      .select('*')
+      .eq('chapter_id', chapterId)
+      .eq('user_id', req.user.id)
+      .order('name');
 
-    const lecturesWithFilePath = result.rows.map(lecture => {
-      let filePath;
-   
-        filePath = lecture.file_path;  // Use the YouTube URL as-is
-      return {
-        ...lecture,
-        file_path: filePath
-      };
-    });
+    if (error) throw error;
 
-    res.json(lecturesWithFilePath);
+    res.json(lectures);
   } catch (err) {
     console.error(err);
     res.status(400).json({ error: err.message });
@@ -225,15 +201,23 @@ app.get('/api/chapters/:chapterId/lectures', authenticateToken, async (req, res)
 app.put('/api/lectures/:lectureId/toggle-watched', authenticateToken, async (req, res) => {
   const { lectureId } = req.params;
   try {
-    const result = await pool.query('SELECT watched FROM Lectures WHERE id = $1 AND user_id = $2', [lectureId, req.user.id]);
-    const lecture = result.rows[0];
+    const { data: lecture, error } = await supabase
+      .from('User_Lectures')
+      .select('watched')
+      .eq('id', lectureId)
+      .eq('user_id', req.user.id)
+      .single();
 
-    if (!lecture) {
-      return res.status(404).json({ error: 'Lecture not found' });
-    }
+    if (error) throw error;
 
     const newWatchedStatus = !lecture.watched;
-    await pool.query('UPDATE Lectures SET watched = $1 WHERE id = $2', [newWatchedStatus, lectureId]);
+    const { error: updateError } = await supabase
+      .from('User_Lectures')
+      .update({ watched: newWatchedStatus })
+      .eq('id', lectureId);
+
+    if (updateError) throw updateError;
+
     res.json({ id: lectureId, watched: newWatchedStatus });
   } catch (err) {
     console.error(err);
@@ -245,15 +229,12 @@ app.put('/api/lectures/:lectureId/toggle-watched', authenticateToken, async (req
 app.get('/api/chapters/:chapterId/duration', authenticateToken, async (req, res) => {
   const { chapterId } = req.params;
   try {
-    const result = await pool.query(
-      `SELECT
-          SUM(duration * CASE WHEN watched THEN 1 ELSE 0 END) AS watched_duration,
-          SUM(duration) AS total_duration
-       FROM Lectures
-       WHERE chapter_id = $1 AND user_id = $2`,
-      [chapterId, req.user.id]
-    );
-    res.json(result.rows[0]);
+    const { data, error } = await supabase
+      .rpc('get_chapter_duration', { chapter_id_input: chapterId, user_id_input: req.user.id });
+
+    if (error) throw error;
+
+    res.json(data[0]);
   } catch (err) {
     console.error(err);
     res.status(400).json({ error: err.message });
@@ -264,25 +245,19 @@ app.get('/api/chapters/:chapterId/duration', authenticateToken, async (req, res)
 app.get('/api/subjects/:subjectId/duration', authenticateToken, async (req, res) => {
   const { subjectId } = req.params;
   try {
-    const result = await pool.query(
-      `SELECT
-          SUM(CASE WHEN Lectures.watched THEN Lectures.duration ELSE 0 END) AS watched_duration,
-          SUM(Lectures.duration) AS total_duration
-       FROM Lectures
-       JOIN Chapters ON Lectures.chapter_id = Chapters.id
-       WHERE Chapters.subject_id = $1 AND Lectures.user_id = $2`,
-      [subjectId, req.user.id]
-    );
-    res.json(result.rows[0]);
+    const { data, error } = await supabase
+      .rpc('get_subject_duration', { subject_id_input: subjectId, user_id_input: req.user.id });
+
+    if (error) throw error;
+
+    res.json(data[0]);
   } catch (err) {
     console.error(err);
     res.status(400).json({ error: err.message });
   }
 });
 
-// Serve static files
-app.use('/lectures', express.static(path.join(__dirname, 'lectures')));
-
+// Start the server
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
