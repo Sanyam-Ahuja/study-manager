@@ -11,7 +11,6 @@
   "license": "ISC",
   "dependencies": {
     "@ffprobe-installer/ffprobe": "^2.1.2",
-    "@xata.io/client": "^0.30.0",
     "axios": "^1.7.2",
     "bcrypt": "^5.1.1",
     "body-parser": "^1.20.2",
