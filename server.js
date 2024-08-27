@@ -223,39 +223,99 @@ app.put('/api/lectures/:lectureId/toggle-watched', authenticateToken, async (req
     console.error(err);
     res.status(400).json({ error: err.message });
   }
+  
 });
 
-// Get total duration of watched and all lectures in a chapter
-app.get('/api/chapters/:chapterId/duration', authenticateToken, async (req, res) => {
-  const { chapterId } = req.params;
-  try {
-    const { data, error } = await supabase
-      .rpc('get_chapter_duration', { chapter_id_input: chapterId, user_id_input: req.user.id });
-
-    if (error) throw error;
-
-    res.json(data[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(400).json({ error: err.message });
-  }
-});
-
-// Get total duration of watched and all lectures in a subject
 app.get('/api/subjects/:subjectId/duration', authenticateToken, async (req, res) => {
   const { subjectId } = req.params;
+  const userId = req.user.id;
+
+  console.log(`Fetching durations for subjectId: ${subjectId}, userId: ${userId}`);
+
   try {
-    const { data, error } = await supabase
-      .rpc('get_subject_duration', { subject_id_input: subjectId, user_id_input: req.user.id });
+    // First, retrieve the chapter IDs associated with the subject
+    const { data: chapters, error: chaptersError } = await supabase
+      .from('Chapters')
+      .select('id')
+      .eq('subject_id', subjectId);
 
-    if (error) throw error;
+    if (chaptersError) throw chaptersError;
 
-    res.json(data[0]);
+    const chapterIds = chapters.map(chapter => chapter.id);
+
+    if (chapterIds.length === 0) {
+      return res.json({ watched_duration: 0, total_duration: 0 });
+    }
+
+    // Now retrieve the lecture durations for the identified chapters
+    const { data: lectures, error: lecturesError } = await supabase
+      .from('User_Lectures')
+      .select('duration, watched')
+      .in('chapter_id', chapterIds)
+      .eq('user_id', userId);
+
+    if (lecturesError) throw lecturesError;
+
+    const watchedDuration = lectures
+      .filter(lecture => lecture.watched)
+      .reduce((sum, lecture) => sum + lecture.duration, 0);
+
+    const totalDuration = lectures
+      .reduce((sum, lecture) => sum + lecture.duration, 0);
+
+    console.log(`watchedDuration: ${watchedDuration}, totalDuration: ${totalDuration}`);
+
+    res.json({ watched_duration: watchedDuration, total_duration: totalDuration });
   } catch (err) {
-    console.error(err);
+    console.error('Error calculating subject duration:', err);
     res.status(400).json({ error: err.message });
   }
 });
+
+
+
+function isValidUUID(uuid) {
+  const regexExp = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+  return regexExp.test(uuid);
+}
+
+
+
+
+
+
+app.get('/api/chapters/:chapterId/duration', authenticateToken, async (req, res) => {
+  const { chapterId } = req.params;
+  const userId = req.user.id;
+
+  try {
+    const { data, error } = await supabase
+      .from('User_Lectures')
+      .select('duration, watched')
+      .eq('chapter_id', chapterId)
+      .eq('user_id', userId);
+
+    if (error) throw error;
+
+    // Log the data to check if it's being retrieved correctly
+    console.log('Retrieved Lectures:', data);
+
+    const watchedDuration = data
+      .filter(lecture => lecture.watched)
+      .reduce((sum, lecture) => sum + lecture.duration, 0);
+
+    const totalDuration = data
+      .reduce((sum, lecture) => sum + lecture.duration, 0);
+
+    res.json({ watched_duration: watchedDuration, total_duration: totalDuration });
+  } catch (err) {
+    console.error('Error calculating chapter duration:', err);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+
+
 
 // Start the server
 app.listen(PORT, () => {
