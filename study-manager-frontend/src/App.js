@@ -239,6 +239,10 @@ function App() {
             />
             <button className="auth-button" onClick={handleRegister}>Register</button>
           </div>
+          <div className='Contact Info'>
+            Made With Love by a JEE Aspirant
+            For Bussiness Related Queries Contact :sanyamcodeup@gmail.com
+          </div>
         </div>
       ) : (
         <div>
@@ -338,6 +342,10 @@ function App() {
           )}
         </div>
       )}
+      <div className='Contact Info'>
+            Made With Love by a JEE Aspirant
+            For Bussiness Related Queries Contact :sanyamcodeup@gmail.com
+          </div>
     </div>
   );
 }
