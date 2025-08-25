@@ -14,8 +14,8 @@ const PORT = process.env.PORT || 5000;
 app.use(cors({ origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], allowedHeaders: ['Content-Type', 'Authorization'], credentials: true }));
 app.use(bodyParser.json());
 
-const supabaseUrl = "https://ashrzqwhbvbxgrvvbxdr.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzaHJ6cXdoYnZieGdydnZieGRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjQ2NzgwODYsImV4cCI6MjA0MDI1NDA4Nn0._HO8PGvO5YG5vVj-cJDJeT3eKL_6Ht6GVe987_xqoAY";
+const supabaseUrl = "https://kgdqcogapxlirrgvfrfm.supabase.co";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtnZHFjb2dhcHhsaXJyZ3ZmcmZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYwNjk3MTksImV4cCI6MjA3MTY0NTcxOX0.72skBCSX1YUzFXbXiQ8kXFHMsnufPjsnKNNqWQZRsJo";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Register new user and populate their lectures
