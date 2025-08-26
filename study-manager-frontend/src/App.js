@@ -343,6 +343,8 @@ function App() {
       <div className='Contact Info'>
             Made With Love by a JEE Aspirant
             For Bussiness Related Queries Contact :sanyamcodeup@gmail.com
+            The registration can take upto 1 minute and the login can take upto 30 sec (Only click the button once)
+            This app has had over 450 users
           </div>
     </div>
   );
