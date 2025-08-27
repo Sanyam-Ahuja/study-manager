@@ -245,6 +245,9 @@ function App() {
       ) : (
         <div>
           <button  className="auth-button2" onClick={handleLogout}>Logout</button>
+          <div>
+                if u wana add ur own lectures go to https://backend-for-adding-lectures.onrender.com/ then log in again
+          </div>
           <div className="subjects-container">
             {subjects.map(subject => (
               <div key={subject.id} className="subject-item">
